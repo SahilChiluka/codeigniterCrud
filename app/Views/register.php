@@ -8,6 +8,7 @@
 </head>
 <body>
     <div class="register">
+        <h1>Register</h1>
         <h3 style="color:red; text-align:center;">
             <?php echo session()->getFlashdata("error"); ?>
         </h3>
@@ -20,7 +21,7 @@
             <input type="password" id="confirmpassword" name="confirmpassword" required> 
             <button type="submit">Register</button>
             <br />
-            <p>Already have an account, <a href="/">login here</a></p>
+            <p>Already have an account, <a href="/">login</a></p>
         </form>
     </div>
 </body>

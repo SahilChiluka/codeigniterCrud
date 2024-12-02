@@ -24,6 +24,8 @@ class Login extends BaseController {
             $dec_password = password_verify($password, $enc_password);
 
             if($dec_password) {
+                $session = session();
+                $session->set('email', $email);
                 return redirect()->to(base_url("/home"));
             } else {
                 session()->setFlashdata("error", "Wrong Password");
