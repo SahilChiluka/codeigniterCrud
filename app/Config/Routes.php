@@ -14,6 +14,8 @@ $routes->post('/updateUser','Home::updateUser');
 $routes->post('/deleteUser','Home::deleteUser');
 $routes->post('/deleteMultiUser', 'Home::deleteMultiUser');
 $routes->get('/download', 'Home::download');
+$routes->get('/errordata','Home::errordata');
+
 // $routes->post('/upload', 'Home::upload');
 // $routes->post('/home','Home::filterUser');
 

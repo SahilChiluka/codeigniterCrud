@@ -9,7 +9,7 @@ class Home extends BaseController
 {
     public function __construct() {
         helper(['url']);
-        $this->user = new UserModel(); 
+        $this->user = new UserModel();
     }
 
     public function index()
@@ -57,27 +57,23 @@ class Home extends BaseController
         $email = $this->request->getVar('email');
 
         $data['all_users'] = $this->user->orderBy('username', 'ASC')->findAll();
-
-        // Start with a query builder instance
         $query = $this->user;
         if ($search) {
             $query->like('username', "$search%", 'after');
         }
-        // Apply additional filters if present
         if ($username) {
             $query->where('username', $username);
         }
+        // orwhere joins query with the name,age,email
+        // where username = 'Anupam' OR age = 50 OR email = 'anupam@gmail.com'
         if ($age) {
             $query->orWhere('age', $age);
         }
         if ($email) {
             $query->orWhere('email', $email);
         }
-        // Paginate the results based on the filtered query
-        $data['users'] = $query->orderBy('age', 'ASC')->paginate(8, 'group');
-        // Set the pager based on the filtered results
+        $data['users'] = $query->orderBy('username', 'ASC')->paginate(8, 'group');
         $data['pager'] = $query->pager;
-        // Render the views
         echo view('/inc/header');
         echo view('home', $data);
         echo view('/inc/footer');
@@ -350,7 +346,6 @@ class Home extends BaseController
         fclose($file);
     }
 
-
     public function upload() {
 
         $file = $this->request->getFile('uploadfile');
@@ -380,7 +375,6 @@ class Home extends BaseController
         $filepath = $uploadPath . $newName;
 
         $mongodata = []; // creating empty array to insert data into MongoDB
-        $errdata = [];
 
         // Process CSV file
         if (($handle = fopen($filepath, "r")) !== FALSE) {
@@ -427,16 +421,18 @@ class Home extends BaseController
                                 $successCount++;   
                             }
                     } else {
-                        $errdata[$errorCount] = $data;
+                        $errdata[] = $data;
                         $errorCount++;
                     }
                 }
             }
 
             fclose($handle);
-            unlink($filepath); // Delete the temporary file
+            // unlink($filepath); // Delete the temporary file
             
             // print_r($errdata);
+            // echo "<br />";
+            // echo $errorCount;
 
             $db->transComplete(); // Complete transaction
 
@@ -447,12 +443,8 @@ class Home extends BaseController
 
             $message = "";
 
-            if($successCount > 0) {
-                $message = "Successfully Imported $successCount records.";
-            }
-            
-            if ($errorCount > 0) {
-                $message .= " Failed to process $errorCount records.";
+            if($successCount >= 0 && $errorCount >= 0){
+                $message = "Imported $successCount records. $errorCount records failed to import.";
             }
 
             $url = 'http://localhost:3000/users/insertMany';
@@ -465,40 +457,26 @@ class Home extends BaseController
             curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($mongodata));
 
-            $response = curl_exec($ch);
+            curl_exec($ch);
 
             curl_close($ch);
 
+            if (!empty($errdata)) {
+                $invalidFilePath = WRITEPATH . 'uploads/' . time() . '.csv';
+                $output = fopen($invalidFilePath, 'w');
+                $headers = array("username","age", "email");
+                fputcsv($output, $headers);
+                foreach ($errdata as $invalidRow) {
+                    fputcsv($output, $invalidRow);
+                }
+                fclose($output);
+                $this->response->download($invalidFilePath, null)->setFileName('invalid_entries.csv');
+            }
             return redirect()->to(base_url('/home'))->with('success', $message);
         }
 
         return redirect()->to(base_url('/home'))->with('error', 'Could not open file for reading');
-
+        
     }
-
+    
 }   
-
-// function err($errdata) {
-//     $filename = 'error_data' . date('Ymd') . '.csv';
-
-//     header("Content-Description: File Transfer");
-//     header("Content-Disposition: attachment; filename=$filename");
-//     header("Content-Type: application/csv; ");
-
-//     // file creation 
-//     $file = fopen('php://output', 'w');
-
-//     $header = array("username","age", "email");
-
-//     fputcsv($file, $header);
-
-//     foreach ($errdata as $key => $line) {
-//         fputcsv($file, $line);
-//     }
-
-//     fclose($file);
-// }
-
-// if($errdata) {
-//     err($errdata);
-// }
